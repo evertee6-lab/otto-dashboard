@@ -520,6 +520,12 @@ function initDateRange(){
   fromHourEl.value='00'; toHourEl.value='23';
 }
 
+// ===== 交互绑定：任一筛选条件变化都立刻重绘（含卡片）=====
+[fromDateEl, toDateEl, fromHourEl, toHourEl, sSel, pSel, cSel, tSel].forEach(el=>{
+  if(!el) return;
+  el.addEventListener('change', render);
+  el.addEventListener('input',  render);   // 日期选择器/下拉输入时即时响应
+});
 
 render();
 </script></body></html>
