@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OTTO 每日销量看板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="otto_dashboard_data.js"></script>
+<style>
+:root{--blue1:#1677ff;--blue2:#4b9bff;--green1:#0f9d58;--green2:#34c759;--bg:#f0f2f5;--line:#e6e8eb;--txt:#1f2329;--mut:#8a919f}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt)}
+.top{background:#fff;padding:13px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:9;flex-wrap:wrap}
+.top h1{font-size:16.5px;margin:0;font-weight:600;white-space:nowrap}
+.meta{font-size:11.5px;color:var(--mut);line-height:1.5}
+.spacer{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--txt)}
+.btn:hover{border-color:var(--blue1);color:var(--blue1)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:6px 14px;font-size:13px;cursor:pointer;color:#646a73;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--blue1);color:#fff;font-weight:600}
+.wrap{padding:16px 20px 44px;max-width:1600px;margin:0 auto}
+.filters{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.frow{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+.frow+.frow{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
+.fi{display:flex;align-items:center;gap:6px;font-size:13px}
+.fi label{color:#646a73;white-space:nowrap}
+.fi select,.fi input{border:1px solid var(--line);border-radius:5px;padding:5px 8px;font-size:13px;background:#fff;min-width:100px;outline:none;font-family:inherit}
+.fi select:focus,.fi input:focus{border-color:var(--blue1)}
+.fi.hl select{border-color:#e74c3c;border-width:2px;box-shadow:0 0 0 2px rgba(231,76,60,.12)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.card{border-radius:10px;padding:11px 13px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.10)}
+.card.blue{background:linear-gradient(135deg,var(--blue1),var(--blue2))}
+.card.green{background:linear-gradient(135deg,var(--green1),var(--green2))}
+.card .t{font-size:12px;opacity:.93;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .body{display:flex;gap:10px;align-items:flex-end}
+.card .kv{flex:1;min-width:0}
+.card .k{font-size:10.5px;opacity:.85}
+.card .v{font-size:19px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
+.card .v small{font-size:10.5px;font-weight:400;opacity:.85;margin-left:2px}
+.card .v input{width:70px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:4px;font-size:12px;padding:2px 4px;font-weight:600;font-family:inherit}
+.card .v input::placeholder{color:rgba(255,255,255,.7)}
+.badge{display:inline-block;min-width:36px;text-align:center;border-radius:10px;padding:1px 7px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.3)}
+.badge.g{background:#12b76a}.badge.y{background:#f5a524;color:#3d2b00}.badge.r{background:#f04438}
+.panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.panel h2{font-size:14px;margin:0 0 10px;font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel h2 .sub{font-weight:400;font-size:12px;color:var(--mut)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#fafbfc;color:#646a73;font-weight:600;font-size:12px;position:sticky;top:0;z-index:1}
+tbody tr:hover{background:#f7f9fc}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.pill{display:inline-block;background:#eef4ff;color:#1677ff;border-radius:4px;padding:1px 6px;font-size:12px}
+.pill.combo{background:#fff4e6;color:#d46b08}
+.tag{font-size:10px;background:#fff4e6;color:#d46b08;border-radius:3px;padding:0 4px;margin-left:4px}
+.tip{font-size:12px;color:var(--mut);margin-top:9px;line-height:1.75}
+.dtfilter{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;color:#646a73;flex-wrap:wrap}
+.dtfilter label{color:#646a73}
+.dtfilter input[type=date]{border:1px solid var(--line);border-radius:5px;padding:4px 7px;font-size:12.5px;font-family:inherit;outline:none}
+.dtfilter input[type=date]:focus{border-color:var(--blue1)}
+.tilde{color:#b8bec9}
+.btn.sm{padding:4px 9px;font-size:12px}
+tr.dayhead td{background:#eef4ff;font-weight:600;color:#1f2329;border-bottom:1px solid #d6e4ff}
+tr.dayhead .dsum{font-weight:400;color:#646a73;font-size:12px;margin-left:10px}
+tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
+.tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.chartbox{height:280px}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<div class="top">
+  <h1>OTTO 每日销量看板</h1>
+  <span class="meta" id="meta"></span>
+  <span class="spacer"></span>
+  <div class="seg" id="segGran">
+    <button data-v="day" class="on">日</button><button data-v="week">周</button><button data-v="month">月</button><button data-v="hour">时</button>
+  </div>
+  <div class="seg" id="segMetric">
+    <button data-v="amt" class="on">销售额</button><button data-v="qty">销量</button>
+  </div>
+  <button class="btn" onclick="resetFilters()">重置</button>
+  <button class="btn" onclick="exportCsv()">导出 CSV</button>
+</div>
+<div class="wrap">
+  <div class="filters">
+    <div class="frow">
+      <div class="fi hl" style="gap:4px"><label>时间从</label>
+        <input type="date" id="fFromDate"><select id="fFromHour" style="min-width:78px"></select>
+      </div>
+      <div class="fi hl" style="gap:4px"><label>到</label>
+        <input type="date" id="fToDate"><select id="fToHour" style="min-width:78px"></select>
+      </div>
+      <div class="fi"><label>销售渠道</label><select><option>Otto</option></select></div>
+      <div class="fi"><label>国家</label><select><option>所有</option></select></div>
+      <div class="fi"><label>SPU</label><select id="fSpu"></select></div>
+      <div class="fi"><label>发货方式</label><select id="fTrans"></select></div>
+    </div>
+    <div class="frow">
+      <div class="fi" style="min-width:300px"><label>SKU</label><select id="fSku" style="min-width:250px"></select></div>
+      <div class="fi"><label>一级类目</label><select id="fCat"></select></div>
+      <div class="fi"><label>二级类目</label><select disabled title="待配置"><option>所有</option></select></div>
+      <div class="fi"><label>三级类目</label><select disabled title="待配置"><option>所有</option></select></div>
+      <div class="fi"><label>类目等级</label><select disabled title="待配置"><option>所有</option></select></div>
+      <div class="fi"><label>品牌</label><select disabled title="固定为 Dripex"><option>Dripex</option></select></div>
+    </div>
+  </div>
+
+  <div class="cards" id="salesCards"></div>
+  <div class="cards" id="qtyCards"></div>
+
+  <div class="panel">
+    <h2><span id="chartTitle">销量变化趋势</span> <span class="sub" id="chartSub"></span></h2>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>出单明细 <span class="sub" id="tblSub"></span>
+      <span class="spacer"></span>
+      <span class="dtfilter">
+        <label>日期</label>
+        <input type="date" id="fFrom"> <span class="tilde">~</span> <input type="date" id="fTo">
+        <button class="btn sm" onclick="quickRange('month')">本月</button>
+        <button class="btn sm" onclick="quickRange('last3')">近3月</button>
+        <button class="btn sm" onclick="quickRange('ytd')">今年</button>
+        <button class="btn sm" onclick="quickRange('all')">全部</button>
+      </span>
+    </h2>
+    <div class="scroll">
+      <table><thead><tr>
+        <th id="thPeriod">日期</th><th>SKU</th><th>SPU（产品名称）</th><th>品类</th><th class="num">销量(件)</th>
+        <th class="num">订单数</th><th class="num">销售额(EUR)</th><th class="num">占比</th>
+      </tr></thead><tbody id="tbody"></tbody></table>
+    </div>
+    <div class="tip">
+      · 销量＝订单量，<b>拆单只算 1 单</b>；<b>已废弃订单也计入</b>（仅排除「付款未完成」）<br>
+      · <b>-1/-2 变体已归并</b>（OET-YDB004PIN2B-1 → OET-YDB004PIN2B）；<span class="tag">组合</span> 表示多件套，整体计 1 个产品主体，不拆分<br>
+      · 目标可直接在卡片上填写并保存本机；R/Y/G = 达成率（绿≥100% / 黄≥80% / 红&lt;80%）
+    </div>
+  </div>
+</div>
+<script>
+const D = window.OTTO_DATA;
+
+// 柱状图数值标签（自绘，无需额外插件）
+const barValuePlugin = {
+  id: 'barValue',
+  afterDatasetsDraw(chart) {
+    const ds0 = chart.data.datasets[0];
+    if(!ds0) return;
+    const meta = chart.getDatasetMeta(0);
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = '600 10px -apple-system,"Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    const many = ds0.data.length > 20;
+    meta.data.forEach((el, i) => {
+      const v = ds0.data[i];
+      if(!v || v <= 0) return;
+      const txt = (metric === 'amt')
+        ? (v >= 1000 ? (v/1000).toFixed(1)+'k' : String(Math.round(v)))
+        : String(v);
+      const y = el.y - 3;
+      // 白描边提升可读性
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(255,255,255,.9)';
+      ctx.strokeText(txt, el.x, y);
+      ctx.fillStyle = '#1f2329';
+      ctx.fillText(txt, el.x, y);
+    });
+    ctx.restore();
+  }
+};
+if(window.Chart) Chart.register(barValuePlugin);
+let chart=null, gran='day', metric='amt';
+
+const fmt = n => (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtInt = n => (n||0).toLocaleString('de-DE');
+const pad = n => String(n).padStart(2,'0');
+const GRAN_LABEL = {day:'每日', week:'每周', month:'每月', hour:'每小时'};
+const PERIOD_COL  = {day:'日期', week:'周', month:'月份', hour:'小时'};
+
+const fromDateEl=document.getElementById('fFromDate'), toDateEl=document.getElementById('fToDate');
+const fromHourEl=document.getElementById('fFromHour'), toHourEl=document.getElementById('fToHour');
+const sSel=document.getElementById('fSku'), pSel=document.getElementById('fSpu'),
+      cSel=document.getElementById('fCat'), tSel=document.getElementById('fTrans');
+
+// 小时下拉 00~23
+const HOURS=Array.from({length:24},(_,i)=>pad(i));
+fromHourEl.innerHTML=HOURS.map(h=>`<option value="${h}">${h}:00</option>`).join('');
+toHourEl.innerHTML=HOURS.map(h=>`<option value="${h}">${h}:00</option>`).join('');
+fromHourEl.value='00'; toHourEl.value='23';
+
+// 全量日期范围
+const allDates=[...new Set(D.totals.day.map(r=>r.period))].sort();
+const D_MIN=allDates[0], D_MAX=allDates[allDates.length-1];
+fromDateEl.min=D_MIN; fromDateEl.max=D_MAX;
+toDateEl.min=D_MIN;  toDateEl.max=D_MAX;
+
+sSel.innerHTML='<option value="">全部产品</option>'+D.skus.map(s=>{
+  const nm=(D.sku_spu[s]||'').slice(0,34);
+  return `<option value="${s}">${s}${nm?' ｜ '+nm:''}${D.sku_combo[s]?' 〔组合〕':''}</option>`;
+}).join('');
+const spuList = [...new Set(D.skus.filter(s=>!D.sku_combo[s]).map(s=>D.sku_spu[s]).filter(x=>x))].sort();
+pSel.innerHTML='<option value="">全部 SPU</option>'+spuList.map(n=>`<option value="${n}">${n}</option>`).join('');
+cSel.innerHTML='<option value="">全部品类</option>'+D.cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+tSel.innerHTML='<option value="">全部发货方式</option>'+(D.transports||[]).map(t=>`<option value="${t}">${t}</option>`).join('');
+
+const tKey='otto_targets_v2';
+const targets=JSON.parse(localStorage.getItem(tKey)||'{"mAmt":0,"mQty":0,"yAmtAmt":0,"yQtyAmt":0}');
+function saveTarget(k,v){targets[k]=v;localStorage.setItem(tKey,JSON.stringify(targets));renderCards();}
+
+function periodStartDate(p){
+  // 把各粒度的周期转成「起始日期 YYYY-MM-DD」
+  if(gran==='hour')  return p.slice(0,10);
+  if(gran==='day')   return p;
+  if(gran==='month') return p+'-01';
+  if(gran==='week'){                       // '2026-W45' → 该周周一
+    const y=parseInt(p.slice(0,4)), w=parseInt(p.slice(6));
+    const jan4=new Date(y,0,4);
+    const mon=new Date(jan4.getTime() - ((jan4.getDay()+6)%7)*86400000 + (w-1)*7*86400000);
+    return mon.getFullYear()+'-'+pad(mon.getMonth()+1)+'-'+pad(mon.getDate());
+  }
+  return p.slice(0,10);
+}
+function inScope(p){
+  const fd=fromDateEl.value, td=toDateEl.value;
+  const pd=periodStartDate(p);
+  if(fd && pd<fd) return false;
+  if(td && pd>td) return false;
+  // 小时粒度：再按小时区间过滤
+  if(gran==='hour'){
+    const h=p.slice(11,13);
+    const fh=fromHourEl.value, th=toHourEl.value;
+    if(fh && h<fh) return false;
+    if(th && h>th) return false;
+  }
+  return true;
+}
+
+function filterDims(arr){
+  // 只按 SKU / SPU / 品类过滤，时间范围完全交给明细区的日期选择器
+  return arr.filter(r=>{
+    if(sSel.value && r.sku!==sSel.value) return false;
+    if(pSel.value && (r.spu||'')!==pSel.value) return false;
+    if(cSel.value && (r.cat||'其他')!==cSel.value) return false;
+    if(tSel.value && (r.transport||'')!==tSel.value) return false;
+    return true;
+  });
+}
+function filterSku(arr, sku){
+  let a=arr.filter(r=>inScope(r.period));
+  if(sku) a=a.filter(r=>r.sku===sku);
+  const spu=pSel.value, cat=cSel.value, tr=tSel.value;
+  if(spu) a=a.filter(r=>(r.spu||'')===spu);
+  if(cat) a=a.filter(r=>(r.cat||'其他')===cat);
+  if(tr)  a=a.filter(r=>(r.transport||'')===tr);
+  return a;
+}
+
+function periodAgg(arr){
+  const m={};
+  arr.forEach(r=>{
+    const o=m[r.period]||(m[r.period]={period:r.period,amt:0,qty:0,orders:0});
+    o.amt+=r.amt; o.qty+=r.qty; o.orders=Math.max(o.orders,r.orders);
+  });
+  return Object.values(m).sort((a,b)=>a.period<b.period?-1:1);
+}
+
+function srcByGran(){
+  if(gran==='hour')  return D.hourly;
+  if(gran==='week')  return D.weekly;
+  if(gran==='month') return D.monthly;
+  return D.daily;
+}
+function currentSeries(){
+  const sku=sSel.value;
+  return periodAgg(filterSku(srcByGran(),sku));
+}
+function currentTotals(){
+  const sku=sSel.value;
+  const hasFilter = sku || pSel.value || cSel.value || tSel.value || gran==='hour';
+  if(!hasFilter) return (D.totals[gran]||[]).filter(r=>inScope(r.period));
+  const m={};
+  filterSku(srcByGran(),sku).forEach(r=>{
+    const o=m[r.period]||(m[r.period]={period:r.period,amt:0,qty:0,orders:0});
+    o.amt+=r.amt; o.qty+=r.qty; o.orders=Math.max(o.orders,r.orders);
+  });
+  return Object.values(m).sort((a,b)=>a.period<b.period?-1:1);
+}
+
+function card(cls,title,actual,unit,tgKey,fmtFn){
+  const tg=targets[tgKey]||0;
+  const ratio=tg>0?actual/tg*100:null;
+  let badge='<span class="badge">--</span>';
+  if(ratio!==null){const c=ratio>=100?'g':(ratio>=80?'y':'r');
+    badge=`<span class="badge ${c}">${ratio.toFixed(0)}%</span>`;}
+  return `<div class="card ${cls}"><div class="t">${title}</div><div class="body">
+    <div class="kv"><div class="k">实际</div><div class="v">${fmtFn(actual)}<small>${unit}</small></div></div>
+    <div class="kv"><div class="k">目标</div><div class="v"><input type="number" value="${tg||''}" placeholder="填目标"
+      onchange="saveTarget('${tgKey}',parseFloat(this.value)||0)"></div></div>
+    <div class="kv" style="flex:0 0 58px"><div class="k">R/Y/G</div><div class="v">${badge}</div></div>
+  </div></div>`;
+}
+
+function renderCards(){
+  const t=currentTotals();
+  const amt=t.reduce((a,b)=>a+b.amt,0);
+  const ord=t.reduce((a,b)=>a+b.orders,0);
+  const n=t.length||1;
+
+  const from=fromDateEl.value, to=toDateEl.value;
+  const scope = (!from&&!to) ? '全部区间' : (from===to? from : (from+' ~ '+to));
+
+  // 基数数据（受 SKU / SPU / 品类影响，不受月份范围限制）
+  const base=D.daily.filter(r=>{
+    if(sSel.value && r.sku!==sSel.value) return false;
+    if(pSel.value && (r.spu||'')!==pSel.value) return false;
+    if(cSel.value && (r.cat||'其他')!==cSel.value) return false;
+    return true;
+  });
+  const ytdYear=(to||new Date().getFullYear().toString()).slice(0,4);
+  const ytd=base.filter(r=>r.period.startsWith(ytdYear));
+  const ytdAmt=ytd.reduce((a,b)=>a+b.amt,0);
+  const ytdOrders=ytd.reduce((a,b)=>a+b.orders,0);
+  const allAmt=base.reduce((a,b)=>a+b.amt,0);
+  const allOrders=base.reduce((a,b)=>a+b.orders,0);
+
+  document.getElementById('salesCards').innerHTML =
+    card('blue','销售额 · '+scope+' 合计', amt,'EUR','rAmtTotal',fmt) +
+    card('blue','销售额 · '+scope+' 日均', amt/n,'EUR/期','rAmt',fmt) +
+    card('blue','销售额 · YTD('+ytdYear+')', ytdAmt,'EUR','ytdAmt',fmt) +
+    card('blue','销售额 · 全部', allAmt,'EUR','allAmt',fmt);
+
+  // ⚠️ 销量 = 订单量（拆单算 1 单），不是 SKU 件数
+  document.getElementById('qtyCards').innerHTML =
+    card('green','订单量 · '+scope+' 合计', ord,'单','rOrdTotal',fmtInt) +
+    card('green','订单量 · '+scope+' 日均', Math.round(ord/n),'单/期','rOrd',fmtInt) +
+    card('green','订单量 · YTD('+ytdYear+')', ytdOrders,'单','ytdOrd',fmtInt) +
+    card('green','订单量 · 全部', allOrders,'单','allOrd',fmtInt);
+
+  document.getElementById('meta').textContent =
+    `${D.source} · 更新 ${D.generated_at} · 累计 ${fmtInt(D.summary.orders)} 单 / ${fmt(D.summary.amount)} EUR · ${D.summary.date_min} ~ ${D.summary.date_max}`;
+}
+
+function renderChart(){
+  const sku=sSel.value;
+  let series=currentSeries();
+
+  // 日粒度 + 已选月份：补全整月每一天（没出单的日子补 0），横轴不省略
+  // 小时视图：补全当天 24 小时
+  const fullDay = (gran==='hour');
+  const day = fromDateEl.value || D_MAX;
+  if(fullDay){
+    const map={};
+    series.forEach(r=>{map[r.period]=r;});
+    const full=[];
+    for(let h=0; h<24; h++){
+      const p=day+' '+pad(h);
+      full.push(map[p] || {period:p, amt:0, qty:0, orders:0});
+    }
+    series=full;
+  }
+
+  const fullMonth = (gran==='day' && fromDateEl.value && toDateEl.value===fromDateEl.value);
+  if(fullMonth){
+    const yy=fromDateEl.value||curY, mm=toDateEl.value;
+    const dayCount=new Date(parseInt(yy), parseInt(mm), 0).getDate();
+    const map={};
+    series.forEach(r=>{map[r.period]=r;});
+    const full=[];
+    for(let d=1; d<=dayCount; d++){
+      const p=yy+'-'+mm+'-'+pad(d);
+      full.push(map[p] || {period:p, amt:0, qty:0, orders:0});
+    }
+    series=full;
+  }
+
+  const labels=series.map(r=> fullDay ? (r.period.slice(11,13)+':00') : (fullMonth? r.period.slice(8) : r.period));
+  const fullLabels=series.map(r=>r.period);
+  const vals=series.map(r=>metric==='amt'?+r.amt.toFixed(2):r.qty);
+  const nz=vals.filter(v=>v>0);
+  const avg=nz.length?nz.reduce((a,b)=>a+b,0)/nz.length:0;
+
+  document.getElementById('chartTitle').textContent =
+    `${sku||'全部产品'} · ${GRAN_LABEL[gran]}${metric==='amt'?'销售额':'销量'}变化`;
+  document.getElementById('chartSub').textContent = fullDay
+    ? `${day} 小时分布（${fromHourEl.value}:00~${toHourEl.value}:00）· 有单小时均值 ${metric==='amt'?fmt(avg):fmtInt(Math.round(avg))}`
+    : (fullMonth
+      ? `${series[0].period} ~ ${series[series.length-1].period} · 共 ${labels.length} 天（含无单日）· 出单日均值 ${metric==='amt'?fmt(avg):fmtInt(Math.round(avg))}`
+      : `共 ${labels.length} 个${GRAN_LABEL[gran].replace('每','')}期 · 均值 ${metric==='amt'?fmt(avg):fmtInt(Math.round(avg))}`);
+
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById('chart'),{
+    type:'bar',
+    data:{labels, datasets:[
+      {label:metric==='amt'?'销售额(EUR)':'销量(件)', data:vals,
+       backgroundColor:metric==='amt'?'rgba(15,157,88,.85)':'rgba(22,119,255,.85)', borderRadius:3, barPercentage:.75},
+      {label:'均值', data:labels.map(()=>+avg.toFixed(2)), type:'line', borderColor:'#f04438',
+       borderWidth:1.5, pointRadius:0, borderDash:[5,4], fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{title:items=>fullLabels[items[0].dataIndex]||items[0].label, label:c=>c.dataset.label+': '+(metric==='amt'?fmt(c.parsed.y):fmtInt(c.parsed.y))}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9},autoSkip:false,maxRotation:60,minRotation:0,callback:function(v){return this.getLabelForValue(v);}}},
+        y:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{font:{size:10}}}}}
+  });
+}
+
+let lastRows=[];
+function renderTable(){
+  const sku=sSel.value;
+  // 明细跟随粒度（日/周/月/时），先按月份范围过滤，再按日期选择器收窄
+  let rows=filterDims(srcByGran()).filter(r=>inScope(r.period));
+
+  // 日期范围筛选
+  // 时间范围已由 inScope 统一过滤
+
+  rows=[...rows].sort((a,b)=> a.period<b.period?1:(a.period>b.period?-1: b.amt-a.amt));
+  lastRows=rows;
+  const total=rows.reduce((a,b)=>a+b.amt,0)||1;
+
+  // 按日期分组
+  const groups={};
+  rows.forEach(r=>{ (groups[r.period]=groups[r.period]||[]).push(r); });
+  const dates=Object.keys(groups).sort().reverse();
+
+  let html='';
+  dates.forEach(d=>{
+    const list=groups[d];
+    const dAmt=list.reduce((a,b)=>a+b.amt,0);
+    const dQty=list.reduce((a,b)=>a+b.qty,0);
+    const dOrd=list.reduce((a,b)=>a+b.orders,0);
+    const headTxt = gran==='hour' ? (d.slice(11,13)+':00') : d;
+    html += `<tr class="dayhead"><td colspan="8">
+      ${headTxt}<span class="dsum">${list.length} 个 SKU · ${fmtInt(dOrd)} 单 · ${fmtInt(dQty)} 件</span>
+      <span class="dnum">${fmt(dAmt)} EUR</span></td></tr>`;
+    list.forEach(r=>{
+      html += `<tr>
+        <td style="color:#b8bec9">${r.period}</td>
+        <td><span class="pill ${r.combo?'combo':''}">${r.sku}</span>${r.combo?'<span class="tag">组合</span>':''}</td>
+        <td style="max-width:330px;overflow:hidden;text-overflow:ellipsis">${r.spu||''}</td>
+        <td>${r.cat||''}</td>
+        <td class="num">${fmtInt(r.qty)}</td>
+        <td class="num">${fmtInt(r.orders)}</td>
+        <td class="num">${fmt(r.amt)}</td>
+        <td class="num">${(r.amt/total*100).toFixed(1)}%</td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tbody').innerHTML = html ||
+    '<tr><td colspan="8" style="text-align:center;color:#8a919f;padding:26px">当前筛选无数据</td></tr>';
+  const unit = gran==='hour'?'小时':(gran==='week'?'周':(gran==='month'?'月':'天'));
+  document.getElementById('tblSub').textContent =
+    `共 ${dates.length} ${unit} · ${rows.length} 行 · 合计 ${fmt(total)} EUR`;
+}
+
+let dateInited=false;
+function render(){if(!dateInited){initDateRange();dateInited=true;}renderCards();renderChart();renderTable();}
+function resetFilters(){fromDateEl.value=curY;toDateEl.value=curM;sSel.value='';pSel.value='';cSel.value='';dateInited=false;render();}
+function exportCsv(){
+  const head=['日期','SKU','SPU','品类','销量(件)','订单数','销售额(EUR)'];
+  const rows=[head].concat(lastRows.map(r=>[r.period,r.sku,(r.spu||'').replace(/,/g,'、'),r.cat||'',r.qty,r.orders,r.amt]));
+  const csv='\ufeff'+rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='OTTO_每日出单明细.csv';a.click();
+}
+
+document.querySelectorAll('#segGran button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#segGran button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); gran=b.dataset.v;
+  if(gran==='hour'){
+    const hours=D.totals.hour.map(r=>r.period.slice(0,10)).sort();
+    const d=document.getElementById('fFrom'), t=document.getElementById('fTo');
+    const day=hours[hours.length-1]||'';
+    if(d) d.value=day; if(t) t.value=day;
+  }
+  render();
+});
+document.querySelectorAll('#segMetric button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#segMetric button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); metric=b.dataset.v; renderChart();
+});
+function quickRange(kind){
+  if(kind==='today'){ fromDateEl.value=D_MAX; toDateEl.value=D_MAX; fromHourEl.value='00'; toHourEl.value='23'; }
+  else if(kind==='week'){
+    const d=new Date(D_MAX); const start=new Date(d);
+    start.setDate(start.getDate()-((start.getDay()+6)%7));
+    fromDateEl.value=start.toISOString().slice(0,10); toDateEl.value=D_MAX;
+    fromHourEl.value='00'; toHourEl.value='23';
+  }
+  else if(kind==='month'){ fromDateEl.value=D_MAX.slice(0,7)+'-01'; toDateEl.value=D_MAX; fromHourEl.value='00'; toHourEl.value='23'; }
+  else if(kind==='all'){ fromDateEl.value=D_MIN; toDateEl.value=D_MAX; fromHourEl.value='00'; toHourEl.value='23'; }
+  render();
+}
+
+function initDateRange(){
+  // 默认：最近 7 天全天
+  const d=new Date(D_MAX); const start=new Date(d); start.setDate(start.getDate()-6);
+  fromDateEl.value=start.toISOString().slice(0,10);
+  toDateEl.value=D_MAX;
+  fromHourEl.value='00'; toHourEl.value='23';
+}
+
+
+render();
+</script></body></html>
