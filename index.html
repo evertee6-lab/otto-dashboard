@@ -74,7 +74,7 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
     <button data-v="day" class="on">日</button><button data-v="week">周</button><button data-v="month">月</button><button data-v="hour">时</button>
   </div>
   <div class="seg" id="segMetric">
-    <button data-v="amt" class="on">销售额</button><button data-v="qty">销量</button>
+    <button data-v="amt" class="on">销售额</button><button data-v="qty">订单量</button>
   </div>
   <button class="btn" onclick="resetFilters()">重置</button>
   <button class="btn" onclick="exportCsv()">导出 CSV</button>
@@ -107,7 +107,7 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
   <div class="cards" id="qtyCards"></div>
 
   <div class="panel">
-    <h2><span id="chartTitle">销量变化趋势</span> <span class="sub" id="chartSub"></span></h2>
+    <h2><span id="chartTitle">订单量变化趋势</span> <span class="sub" id="chartSub"></span></h2>
     <div class="chartbox"><canvas id="chart"></canvas></div>
   </div>
 
@@ -261,7 +261,7 @@ function periodAgg(arr){
   const m={};
   arr.forEach(r=>{
     const o=m[r.period]||(m[r.period]={period:r.period,amt:0,qty:0,orders:0});
-    o.amt+=r.amt; o.qty+=r.qty; o.orders=Math.max(o.orders,r.orders);
+    o.amt+=r.amt; o.qty+=r.qty; o.orders+=r.orders;   // 同日各 SKU 订单数相加
   });
   return Object.values(m).sort((a,b)=>a.period<b.period?-1:1);
 }
@@ -283,7 +283,7 @@ function currentTotals(){
   const m={};
   filterSku(srcByGran(),sku).forEach(r=>{
     const o=m[r.period]||(m[r.period]={period:r.period,amt:0,qty:0,orders:0});
-    o.amt+=r.amt; o.qty+=r.qty; o.orders=Math.max(o.orders,r.orders);
+    o.amt+=r.amt; o.qty+=r.qty; o.orders+=r.orders;   // 同日各 SKU 订单数相加
   });
   return Object.values(m).sort((a,b)=>a.period<b.period?-1:1);
 }
@@ -344,7 +344,17 @@ function renderCards(){
 
 function renderChart(){
   const sku=sSel.value;
-  let series=currentSeries();
+  // 无 SKU/SPU/品类/运输方式筛选时，直接用 totals（按订单号去重，最精确）；
+  // 有维度筛选时才走 SKU 级聚合
+  const dimFiltered = !!(sSel.value || pSel.value || cSel.value || tSel.value);
+  let series;
+  if(dimFiltered){
+    series=currentSeries();
+  } else {
+    series=(D.totals[gran]||[]).map(r=>({period:r.period, amt:r.amt, qty:r.qty, orders:r.orders}))
+             .filter(r=>inScope(r.period))
+             .sort((a,b)=> a.period<b.period?-1:1);
+  }
 
   // 日粒度 + 已选月份：补全整月每一天（没出单的日子补 0），横轴不省略
   // 小时视图：补全当天 24 小时
@@ -361,28 +371,32 @@ function renderChart(){
     series=full;
   }
 
-  const fullMonth = (gran==='day' && fromDateEl.value && toDateEl.value===fromDateEl.value);
+  // 日视图：补全「起止日期之间」的每一天（没出单的日子补 0，不省略）
+  const fullMonth = (gran==='day' && fromDateEl.value && toDateEl.value && fromDateEl.value<=toDateEl.value);
   if(fullMonth){
-    const yy=fromDateEl.value||curY, mm=toDateEl.value;
-    const dayCount=new Date(parseInt(yy), parseInt(mm), 0).getDate();
     const map={};
     series.forEach(r=>{map[r.period]=r;});
     const full=[];
-    for(let d=1; d<=dayCount; d++){
-      const p=yy+'-'+mm+'-'+pad(d);
+    let cur=new Date(fromDateEl.value+'T00:00:00');
+    const end=new Date(toDateEl.value+'T00:00:00');
+    let guard=0;
+    while(cur<=end && guard<400){
+      const p=cur.getFullYear()+'-'+pad(cur.getMonth()+1)+'-'+pad(cur.getDate());
       full.push(map[p] || {period:p, amt:0, qty:0, orders:0});
+      cur.setDate(cur.getDate()+1);
+      guard++;
     }
-    series=full;
+    if(full.length) series=full;
   }
 
   const labels=series.map(r=> fullDay ? (r.period.slice(11,13)+':00') : (fullMonth? r.period.slice(8) : r.period));
   const fullLabels=series.map(r=>r.period);
-  const vals=series.map(r=>metric==='amt'?+r.amt.toFixed(2):r.qty);
+  const vals=series.map(r=>metric==='amt'?+r.amt.toFixed(2):r.orders);   // 销量=订单量
   const nz=vals.filter(v=>v>0);
   const avg=nz.length?nz.reduce((a,b)=>a+b,0)/nz.length:0;
 
   document.getElementById('chartTitle').textContent =
-    `${sku||'全部产品'} · ${GRAN_LABEL[gran]}${metric==='amt'?'销售额':'销量'}变化`;
+    `${sku||'全部产品'} · ${GRAN_LABEL[gran]}${metric==='amt'?'销售额':'订单量'}变化`;
   document.getElementById('chartSub').textContent = fullDay
     ? `${day} 小时分布（${fromHourEl.value}:00~${toHourEl.value}:00）· 有单小时均值 ${metric==='amt'?fmt(avg):fmtInt(Math.round(avg))}`
     : (fullMonth
@@ -393,7 +407,7 @@ function renderChart(){
   chart=new Chart(document.getElementById('chart'),{
     type:'bar',
     data:{labels, datasets:[
-      {label:metric==='amt'?'销售额(EUR)':'销量(件)', data:vals,
+      {label:metric==='amt'?'销售额(EUR)':'订单量(单)', data:vals,
        backgroundColor:metric==='amt'?'rgba(15,157,88,.85)':'rgba(22,119,255,.85)', borderRadius:3, barPercentage:.75},
       {label:'均值', data:labels.map(()=>+avg.toFixed(2)), type:'line', borderColor:'#f04438',
        borderWidth:1.5, pointRadius:0, borderDash:[5,4], fill:false}
