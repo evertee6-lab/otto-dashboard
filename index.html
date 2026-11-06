@@ -88,6 +88,13 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
       <div class="fi hl" style="gap:4px"><label>到</label>
         <input type="date" id="fToDate"><select id="fToHour" style="min-width:78px"></select>
       </div>
+      <div class="fi" style="gap:5px;flex-wrap:wrap">
+        <button class="btn sm" onclick="quickPick('d7')">近7天</button>
+        <button class="btn sm" onclick="quickPick('d14')">近14天</button>
+        <button class="btn sm" onclick="quickPick('d30')">近30天</button>
+        <button class="btn sm" onclick="quickPick('lastM')">上月</button>
+        <button class="btn sm" onclick="quickPick('thisM')">本月</button>
+      </div>
       <div class="fi"><label>销售渠道</label><select><option>Otto</option></select></div>
       <div class="fi"><label>国家</label><select><option>所有</option></select></div>
       <div class="fi"><label>SPU</label><select id="fSpu"></select></div>
@@ -499,16 +506,23 @@ document.querySelectorAll('#segMetric button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#segMetric button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on'); metric=b.dataset.v; renderChart();
 });
-function quickRange(kind){
-  if(kind==='today'){ fromDateEl.value=D_MAX; toDateEl.value=D_MAX; fromHourEl.value='00'; toHourEl.value='23'; }
-  else if(kind==='week'){
-    const d=new Date(D_MAX); const start=new Date(d);
-    start.setDate(start.getDate()-((start.getDay()+6)%7));
-    fromDateEl.value=start.toISOString().slice(0,10); toDateEl.value=D_MAX;
-    fromHourEl.value='00'; toHourEl.value='23';
-  }
-  else if(kind==='month'){ fromDateEl.value=D_MAX.slice(0,7)+'-01'; toDateEl.value=D_MAX; fromHourEl.value='00'; toHourEl.value='23'; }
-  else if(kind==='all'){ fromDateEl.value=D_MIN; toDateEl.value=D_MAX; fromHourEl.value='00'; toHourEl.value='23'; }
+function quickPick(kind){
+  const maxD=D_MAX, maxDate=new Date(maxD+'T00:00:00');
+  const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  let from, to;
+  if(kind==='d7'||kind==='d14'||kind==='d30'){
+    const n=parseInt(kind.slice(1));
+    const st=new Date(maxDate); st.setDate(st.getDate()-(n-1));
+    from=fmt(st); to=maxD;
+  } else if(kind==='thisM'){
+    from=maxD.slice(0,7)+'-01'; to=maxD;
+  } else if(kind==='lastM'){
+    const first=new Date(maxDate.getFullYear(), maxDate.getMonth()-1, 1);
+    const last=new Date(maxDate.getFullYear(), maxDate.getMonth(), 0);
+    from=fmt(first); to=fmt(last);
+  } else return;
+  fromDateEl.value=from; toDateEl.value=to;
+  fromHourEl.value='00'; toHourEl.value='23';
   render();
 }
 
