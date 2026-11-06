@@ -139,6 +139,7 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
     <div class="tip">
       · 销量＝订单量，<b>拆单只算 1 单</b>；<b>已废弃订单也计入</b>（仅排除「付款未完成」）<br>
       · <b>-1/-2 变体已归并</b>（OET-YDB004PIN2B-1 → OET-YDB004PIN2B）；<span class="tag">组合</span> 表示多件套，整体计 1 个产品主体，不拆分<br>
+      · <b>时间口径：德国本地时间</b>（易仓创建时间为北京时间，−7 小时换算；跨零点订单归入德国前一日）<br>
       · <b>毛利</b>=销售额×7.62−头程−关税−尾程−采购价−退款(3%)−平台费(15%)−服务费(8.5%)，成本按「单套×订单数」计<br>
       · 目标可直接在卡片上填写并保存本机；R/Y/G = 达成率（绿≥100% / 黄≥80% / 红&lt;80%）
     </div>
@@ -346,7 +347,7 @@ function renderCards(){
     card('green','订单量 · 全部', allOrders,'单','allOrd',fmtInt);
 
   document.getElementById('meta').textContent =
-    `${D.source} · 更新 ${D.generated_at} · 累计 ${fmtInt(D.summary.orders)} 单 / ${fmt(D.summary.amount)} EUR · ${D.summary.date_min} ~ ${D.summary.date_max}`;
+    `${D.source} · 更新 ${D.generated_at} · 累计 ${fmtInt(D.summary.orders)} 单 / ${fmt(D.summary.amount)} EUR · ${D.summary.date_min} ~ ${D.summary.date_max}（德国时间）`;
 }
 
 function renderChart(){
