@@ -183,6 +183,7 @@ let chart=null, gran='day', metric='amt';
 
 const fmt = n => (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtInt = n => (n||0).toLocaleString('de-DE');
+const fmtPct = n => (n==null||isNaN(n)) ? '--' : Number(n).toFixed(1);
 const pad = n => String(n).padStart(2,'0');
 const GRAN_LABEL = {day:'每日', week:'每周', month:'每月', hour:'每小时'};
 const PERIOD_COL  = {day:'日期', week:'周', month:'月份', hour:'小时'};
@@ -265,6 +266,21 @@ function filterSku(arr, sku){
   return a;
 }
 
+// 毛利口径：profit 为人民币（amt*FX*KEEP - 成本），毛利率 = profit /(全部销售额*FX)
+// 完全跟随当前筛选：时间段 + 粒度 + SKU/SPU/品类/运输方式
+// 未匹配成本的 SKU 计入销售额分母（毛利记 0），保证「毛利÷销售额÷汇率」能对上
+function gpStats(){
+  const a = filterSku(srcByGran(), sSel.value);
+  const amtAll  = a.reduce((s,r)=>s+(r.amt||0),0);
+  const wc      = a.filter(r=>r.profit!=null);
+  const amtCost = wc.reduce((s,r)=>s+(r.amt||0),0);
+  const pf      = wc.reduce((s,r)=>s+(r.profit||0),0);
+  const fx      = (D.cost_meta && D.cost_meta.fx) || 7.62;
+  return {amt:amtAll, amtCost:amtCost, profit:pf, fx:fx,
+          rate:  amtAll>0 ? pf/(amtAll*fx)*100 : null,
+          cover: amtAll>0 ? amtCost/amtAll*100 : null};
+}
+
 function periodAgg(arr){
   const m={};
   arr.forEach(r=>{
@@ -330,21 +346,20 @@ function renderCards(){
   const ytd=base.filter(r=>r.period.startsWith(ytdYear));
   const ytdAmt=ytd.reduce((a,b)=>a+b.amt,0);
   const ytdOrders=ytd.reduce((a,b)=>a+b.orders,0);
-  const allAmt=base.reduce((a,b)=>a+b.amt,0);
-  const allOrders=base.reduce((a,b)=>a+b.orders,0);
+  const gp=gpStats();   // 毛利/毛利率：跟随当前时间段与全部筛选
 
   document.getElementById('salesCards').innerHTML =
     card('blue','销售额 · '+scope+' 合计', amt,'EUR','rAmtTotal',fmt) +
     card('blue','销售额 · '+scope+' 日均', amt/n,'EUR/期','rAmt',fmt) +
     card('blue','销售额 · YTD('+ytdYear+')', ytdAmt,'EUR','ytdAmt',fmt) +
-    card('blue','销售额 · 全部', allAmt,'EUR','allAmt',fmt);
+    card('blue','毛利率 · '+scope, gp.rate,'%','rGpRate',fmtPct);
 
   // ⚠️ 销量 = 订单量（拆单算 1 单），不是 SKU 件数
   document.getElementById('qtyCards').innerHTML =
     card('green','订单量 · '+scope+' 合计', ord,'单','rOrdTotal',fmtInt) +
     card('green','订单量 · '+scope+' 日均', Math.round(ord/n),'单/期','rOrd',fmtInt) +
     card('green','订单量 · YTD('+ytdYear+')', ytdOrders,'单','ytdOrd',fmtInt) +
-    card('green','订单量 · 全部', allOrders,'单','allOrd',fmtInt);
+    card('green','毛利 · '+scope, gp.profit,'RMB','rGpAmt',fmt);
 
   document.getElementById('meta').textContent =
     `${D.source} · 更新 ${D.generated_at} · 累计 ${fmtInt(D.summary.orders)} 单 / ${fmt(D.summary.amount)} EUR · ${D.summary.date_min} ~ ${D.summary.date_max}（德国时间）`;
