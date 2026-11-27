@@ -68,6 +68,29 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
 .sorter a{cursor:pointer;color:#646a73;padding:2px 7px;border-radius:4px;text-decoration:none}
 .sorter a:hover{background:#f2f3f5}
 .sorter a.on{background:#eef4ff;color:#1677ff;font-weight:600}
+/* ===== 述职报告板块 ===== */
+.rpt{max-width:980px;font-size:13px;line-height:1.85;color:#1f2329}
+.rpt-head{border-left:3px solid #1677ff;padding:4px 0 4px 12px;margin:2px 0 14px}
+.rpt-title{font-size:21px;font-weight:700;letter-spacing:.5px}
+.rpt-sub{font-size:12.5px;color:#8a919f;margin-top:4px}
+.rpt-lead{background:#f7f9fc;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 18px;font-size:13.5px}
+.rpt h4{font-size:15px;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.rpt h5{font-size:13.5px;margin:18px 0 8px;color:#1f2329}
+.rpt p{margin:8px 0}
+.rpt ul,.rpt ol{margin:8px 0 8px 22px;padding:0}
+.rpt li{margin:4px 0}
+.rpt-note{font-size:12px;color:#8a919f}
+.rpt-kicker{background:#fff8e6;border-left:3px solid #f0b429;padding:6px 12px;border-radius:0 6px 6px 0;font-weight:600}
+.rpt-step{margin:14px 0 4px;color:#1677ff}
+.rpt-tbl{width:100%;border-collapse:collapse;margin:10px 0 12px;font-size:12.5px}
+.rpt-tbl th,.rpt-tbl td{border-bottom:1px solid var(--line);padding:7px 10px;text-align:left}
+.rpt-tbl th{background:#f7f9fc;font-weight:600;white-space:nowrap}
+.rpt-tbl.num-r td:not(:first-child),.rpt-tbl.num-r th:not(:first-child){text-align:right;white-space:nowrap}
+.rpt-tbl tbody tr:hover{background:#fafbfc}
+.rpt-tbl tr.sum td{font-weight:700;background:#f7f9fc}
+.rpt-tbl .neg{color:#e5484d}
+.rpt-tbl .pos{color:#1677ff}
+.rpt-tbl .mut{color:#8a919f}
 @media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
 <div class="top">
@@ -155,6 +178,142 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
       · 毛利＝销售额×7.62×0.735−成本×订单数（成本来自《定价表》）；标记 <span class="tag">—</span> 表示该 SKU 尚无成本数据<br>
       · 组合 SKU 保留原名称统计；<b>OET-YDB004PIN2B+YDF002HEN0X</b> 的毛利只按 <b>YDB004PIN2B</b> 的成本计算
     </div>
+  </div>
+
+  <div class="panel">
+    <h2>转正述职报告 <span class="sub">李常春 · 运动器械B组 · 试用期 2026.09–11</span>
+      <span class="spacer"></span>
+      <span class="sorter"><a id="rptToggle" class="on">收起</a></span>
+    </h2>
+    <div id="rptBody"><div class="rpt">
+  <div class="rpt-head">
+    <div class="rpt-title">转正述职报告</div>
+    <div class="rpt-sub">李常春｜运动器械 B 组 · 运营专员｜试用期：2026 年 9 月 – 11 月</div>
+  </div>
+
+  <p class="rpt-lead">这三个月我把 OTTO 德国站从日均 8 单做到日均 58 单，且销售额翻了 9 倍，毛利从 9 月的 3,087 元做到 11 月的 71,186 元。加上亚马逊那边，整体盘子从 9 月亏 1.2 万，到 10 月基本打平，11 月预计毛利 6.5 万。</p>
+
+  <h4>一、试用期业绩数据总结</h4>
+
+  <h5>1.1 整体盘子：从亏到盈</h5>
+  <p>把 OTTO 和亚马逊合在一起看（都是人民币，OTTO 为财务口径不含税）：</p>
+  <table class="rpt-tbl num-r">
+    <thead><tr><th>月份</th><th>OTTO 销售额</th><th>亚马逊销售额</th><th>合计</th><th>OTTO 毛利</th><th>亚马逊毛利</th><th>合计毛利</th><th>毛利率</th></tr></thead>
+    <tbody>
+      <tr><td>9 月</td><td>68,015</td><td>206,657</td><td>274,671</td><td>3,087</td><td class="neg">-15,453</td><td class="neg">-12,367</td><td class="neg">-4.5%</td></tr>
+      <tr><td>10 月</td><td>375,534</td><td>253,718</td><td>629,251</td><td>42,028</td><td class="neg">-43,460</td><td class="neg">-1,431</td><td class="neg">-0.2%</td></tr>
+      <tr><td>11 月*</td><td>635,586</td><td>220,114</td><td>855,699</td><td>71,186*</td><td class="neg">-5,680*</td><td>65,506*</td><td>7.65%</td></tr>
+      <tr class="sum"><td>合计</td><td>1,079,135</td><td>460,375</td><td>1,759,621</td><td>116,301</td><td class="neg">-64,593</td><td>+51,708</td><td>+2.9%</td></tr>
+    </tbody>
+  </table>
+  <p class="rpt-note">*11 月亚马逊账单未出，只有 OTTO；OTTO 11 月按看板 EUR 金额折算人民币（1.19 VAT、7.62 汇率），毛利按 10 月毛利率推算。</p>
+  <p class="rpt-kicker">一句话：9 月是亏的，10 月打平，11 月拉成正值。</p>
+
+  <h5>1.2 拆开看：OTTO 在赚，亚马逊在亏</h5>
+  <p>这张表是整份报告最关键的信息——两条线走势完全相反。</p>
+  <table class="rpt-tbl num-r">
+    <thead><tr><th>指标</th><th>9 月</th><th>10 月</th><th>变化</th></tr></thead>
+    <tbody>
+      <tr><td>OTTO 销售额</td><td>68,015</td><td>375,534</td><td class="pos">+452%</td></tr>
+      <tr><td>OTTO 毛利</td><td>3,087</td><td>42,028</td><td class="pos">+1,262%</td></tr>
+      <tr><td>OTTO 毛利率</td><td>4.5%</td><td>11.2%</td><td class="pos">+6.7pt</td></tr>
+      <tr><td>亚马逊销售额</td><td>206,657</td><td>253,718</td><td>+23%</td></tr>
+      <tr><td>亚马逊毛利</td><td class="neg">-15,453</td><td class="neg">-43,460</td><td class="neg">亏损扩大 181%</td></tr>
+    </tbody>
+  </table>
+  <p>OTTO 的毛利率从 4.5% 提到 11.2%，原因有两个：一是销量起来后固定成本摊薄，二是物流渠道结构优化（单均运费下降）。</p>
+  <p>亚马逊这边收入只涨了 23%，亏损却扩大了近 2 倍。拆开看主要有三块：</p>
+  <table class="rpt-tbl num-r">
+    <thead><tr><th>账号</th><th>10 月销售额</th><th>10 月毛利</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>器械B组-峻智-DE</td><td>139,929</td><td class="pos">+8,545</td><td>唯一贡献正毛利的主力</td></tr>
+      <tr><td>共用-旭捷-UK</td><td>84,611</td><td class="neg">-6,240</td><td>量大但不赚钱</td></tr>
+      <tr><td>共用-宜博雅-UK</td><td>7,807</td><td class="neg">-7,634</td><td>小量巨亏</td></tr>
+      <tr><td>共用-宜博雅-DE</td><td>9,815</td><td class="neg">-4,256</td><td>同上</td></tr>
+      <tr><td>器械B组-澤馳-US</td><td>4,377</td><td class="neg">-4,197</td><td>同上</td></tr>
+      <tr><td>共用-TIN-UK</td><td>2,488</td><td class="neg">-3,134</td><td>同上</td></tr>
+    </tbody>
+  </table>
+  <p class="rpt-kicker">亚马逊的问题不是量，是结构：除了峻智-DE，其他账号几乎全在亏。</p>
+
+  <h5>1.3 OTTO 单独看：三个月怎么长起来的</h5>
+  <table class="rpt-tbl num-r">
+    <thead><tr><th>指标</th><th>9 月（13 天）</th><th>10 月（31 天）</th><th>11 月（27 天）</th></tr></thead>
+    <tbody>
+      <tr><td>订单量</td><td>104</td><td>824</td><td>1,557</td></tr>
+      <tr><td>销售额（EUR，含税）</td><td>10,679</td><td>65,223</td><td>99,258</td></tr>
+      <tr><td>销量（件）</td><td>154</td><td>1,004</td><td>1,669</td></tr>
+      <tr><td>日均订单</td><td>8.0</td><td>26.6</td><td>57.7</td></tr>
+      <tr><td>日均销售额</td><td>821</td><td>2,104</td><td>3,676</td></tr>
+    </tbody>
+  </table>
+  <p>日均单量 8 → 27 → 58，两个月翻了 7 倍。11 月单日峰值 97 单 / 7,089 欧元（11-22）。</p>
+  <p>11 月还剩 3 天没算，按当前日均推算全月大概 1,730 单 / 11 万欧元。</p>
+
+  <h5>1.4 对着考核表，四项自评</h5>
+  <table class="rpt-tbl num-r">
+    <thead><tr><th>考核项</th><th>权重</th><th>实际情况</th><th>我的判断</th></tr></thead>
+    <tbody>
+      <tr><td>销售额 &amp; 订单量</td><td>25%</td><td>OTTO 销售额 9 倍、订单量 15 倍增长</td><td class="pos">超额完成</td></tr>
+      <tr><td>毛利额</td><td>40%</td><td>OTTO 毛利 3,087 → 42,028 → 71,186，毛利率 4.5% → 11.2%</td><td>达成（OTTO 线）</td></tr>
+      <tr><td>广告 ROI</td><td>5%</td><td>OTTO 侧广告投入极少（10 月 2,082 元，占销售额 0.6%），起量靠自然流量和运营</td><td class="mut">未重点投入</td></tr>
+    </tbody>
+  </table>
+
+  <h5>1.5 具体做了哪些动作</h5>
+  <p class="rpt-step"><b>① 审单流程标准化</b></p>
+  <p>刚接手时每天只能处理 20 来单，手工点、手工比价。后来把拆单、换仓、清邮箱、渠道比价都固化成了脚本流程：</p>
+  <ul>
+    <li>日处理能力从 20 单提到 100+ 单</li>
+    <li>11 月 1,557 单，零积压</li>
+    <li>同类异常（8 类，如城市名超长、渠道限额、DHL 产品限制）的二次处理时间从 30 分钟降到 5 分钟</li>
+  </ul>
+  <p class="rpt-step"><b>② 每单做渠道比价</b></p>
+  <p>每单试算 39 个渠道，先过滤掉 OTTO 不适用的（DE_GC_PARCEL_*、*_EBAY、*_SFP），再选最低价。单均运费降了约 15%。</p>
+  <p class="rpt-step"><b>④ 做了个数据看板</b></p>
+  <p>之前判断“哪款赚钱”全凭印象。现在有日更看板，销售额、毛利、SKU 排名都能查。这个看板后来也成了我广告和促销决策的依据。</p>
+
+  <h4>二、工作规划</h4>
+
+  <h5>2.1 清货：可调节哑铃和轮胎哑铃</h5>
+  <p>这是我最想先做的事，因为这两个品类在占着库存不产出。</p>
+  <p>现状有点难看：</p>
+  <table class="rpt-tbl num-r">
+    <thead><tr><th>品类</th><th>SKU 数</th><th>三个月销量</th><th>总库存</th></tr></thead>
+    <tbody>
+      <tr><td>可调节哑铃 10KG（A5FEYL 系列）</td><td>7 个</td><td>550 件</td><td>1,795 件</td></tr>
+      <tr><td>轮胎哑铃（A5YL11）</td><td>7 个</td><td>186 件</td><td>1,450 件</td></tr>
+    </tbody>
+  </table>
+  <p>我的判断，卖不动有三个原因：</p>
+  <ol>
+    <li>过于注重两个可调节哑铃装——没有推动单个可调节哑铃的出单，实际上单个哑铃出单会更容易</li>
+    <li>轮胎哑铃太小众——市场认知度低，且主图没把卖点和产品结构讲透，并且主图有严重的结构错误</li>
+    <li>缺组合场景——单独卖转化差，但没有尝试主推组合营销</li>
+  </ol>
+  <p class="rpt-step"><b>清货策略：多渠道多站点上链接</b></p>
+  <ul>
+    <li>在 OTTO 平台和亚马逊平台上架组合链接到哑铃类目；通过大额折扣 + 广告尝试主推</li>
+    <li>在亚马逊欧洲小站点上架哑铃以及组合款的链接；小预算跑广告</li>
+    <li>优化文案与主图</li>
+    <li>通过 sorftime 收集评论、统计消费者痛点，对整个哑铃类目的标题五点、主图进行优化</li>
+    <li>广告调整频率与次数增加</li>
+    <li>通过领星的广告系统以及产品表现，每天多盯广告数据，做到每日一小调，每周一大调</li>
+  </ul>
+
+  <h4>三、业务痛点和问题分析</h4>
+
+  <h5>3.1 业务痛点</h5>
+  <p>OTTO 卖家后台在紫鸟浏览器里，没开调试接口，标发和回邮暂时只能手动操作。当前每天 50+ 条待标发，按 30 秒/单要 1 小时。</p>
+
+  <h5>3.2 问题分析</h5>
+  <ul>
+    <li><b>规模不是问题，结构才是。</b>三个月把单量做起来，说明运营端没问题。但谷仓退货问题需要重点关注，防止退货标签费用冲刷销售毛利。</li>
+    <li><b>亚马逊需要重点关注。</b>收入只涨 23%，亏损扩大 181%，很大程度是精力不够集中，想一点干一点，后续会把中心转移回亚马逊，集中精力清货（重新做盈利测算；广告重新接回自己操作；标题五点图片优化提升转化率，减少无效支出）。</li>
+  </ul>
+</div>
+</div>
+    <div class="tip">· 内容取自《李常春_转正述职报告_20261127.docx》，独立板块展示，不影响上方销售数据</div>
   </div>
 </div>
 <script>
@@ -569,6 +728,17 @@ document.querySelectorAll('.sorter a').forEach(a=>a.onclick=()=>{
   document.querySelectorAll('.sorter a').forEach(x=>x.classList.remove('on'));
   a.classList.add('on'); skuSort=a.dataset.k; renderSkuSummary();
 });
+
+// 述职报告折叠
+(function(){
+  const t=document.getElementById('rptToggle'), b=document.getElementById('rptBody');
+  if(!t||!b) return;
+  t.onclick=()=>{
+    const hide = b.style.display!=='none';
+    b.style.display = hide?'none':'';
+    t.textContent = hide?'展开':'收起';
+  };
+})();
 
 let dateInited=false;
 function render(){if(!dateInited){initDateRange();dateInited=true;}renderCards();renderChart();renderTable();renderSkuSummary();}
