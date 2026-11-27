@@ -64,6 +64,10 @@ tr.dayhead .dsum{font-weight:400;color:#646a73;font-size:12px;margin-left:10px}
 tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
 .tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:8px}
 .chartbox{height:280px}
+.sorter{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:400;color:#646a73}
+.sorter a{cursor:pointer;color:#646a73;padding:2px 7px;border-radius:4px;text-decoration:none}
+.sorter a:hover{background:#f2f3f5}
+.sorter a.on{background:#eef4ff;color:#1677ff;font-weight:600}
 @media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
 <div class="top">
@@ -96,7 +100,6 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
         <button class="btn sm" onclick="quickPick('thisM')">本月</button>
       </div>
       <div class="fi"><label>销售渠道</label><select><option>Otto</option></select></div>
-      <div class="fi"><label>国家</label><select><option>所有</option></select></div>
       <div class="fi"><label>SPU</label><select id="fSpu"></select></div>
       <div class="fi"><label>发货方式</label><select id="fTrans"></select></div>
     </div>
@@ -105,8 +108,6 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
       <div class="fi"><label>一级类目</label><select id="fCat"></select></div>
       <div class="fi"><label>二级类目</label><select disabled title="待配置"><option>所有</option></select></div>
       <div class="fi"><label>三级类目</label><select disabled title="待配置"><option>所有</option></select></div>
-      <div class="fi"><label>类目等级</label><select disabled title="待配置"><option>所有</option></select></div>
-      <div class="fi"><label>品牌</label><select disabled title="固定为 Dripex"><option>Dripex</option></select></div>
     </div>
   </div>
 
@@ -119,17 +120,28 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
   </div>
 
   <div class="panel">
-    <h2>出单明细 <span class="sub" id="tblSub"></span>
+    <h2>SKU 汇总 <span class="sub" id="skuSumSub"></span>
       <span class="spacer"></span>
-      <span class="dtfilter">
-        <label>日期</label>
-        <input type="date" id="fFrom"> <span class="tilde">~</span> <input type="date" id="fTo">
-        <button class="btn sm" onclick="quickRange('month')">本月</button>
-        <button class="btn sm" onclick="quickRange('last3')">近3月</button>
-        <button class="btn sm" onclick="quickRange('ytd')">今年</button>
-        <button class="btn sm" onclick="quickRange('all')">全部</button>
+      <span class="sorter">排序：
+        <a data-k="amt" class="on">销售额</a><a data-k="qty">销量</a><a data-k="gp">毛利</a><a data-k="rate">毛利率</a>
       </span>
     </h2>
+    <div class="scroll">
+      <table><thead><tr>
+        <th style="width:44px">#</th><th>SKU</th><th>产品名称</th><th>品类</th><th class="num">销量(件)</th>
+        <th class="num">订单数</th><th class="num">销售额(CNY)</th><th class="num">毛利(CNY)</th>
+        <th class="num">毛利率</th><th class="num">销售额占比</th>
+      </tr></thead><tbody id="skuSumBody"></tbody></table>
+    </div>
+    <div class="tip">
+      · 跟随上方时间范围与筛选条件联动；销售额按 1 EUR = 7.62 CNY 折算<br>
+      · 毛利＝销售额×7.62×0.735−成本×订单数（成本来自《定价表》）；标记 <span class="tag">—</span> 表示该 SKU 尚无成本数据<br>
+      · 组合 SKU 保留原名称统计；<b>OET-YDB004PIN2B+YDF002HEN0X</b> 的毛利只按 <b>YDB004PIN2B</b> 的成本计算
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>出单明细 <span class="sub" id="tblSub"></span></h2>
     <div class="scroll">
       <table><thead><tr>
         <th id="thPeriod">日期</th><th>SKU</th><th>SPU（产品名称）</th><th>品类</th><th class="num">销量(件)</th>
@@ -495,8 +507,71 @@ function renderTable(){
     `共 ${dates.length} ${unit} · ${rows.length} 行 · 合计 ${fmt(total)} EUR`;
 }
 
+// ===== SKU 汇总（跟随上方时间范围 + 全部筛选）=====
+let skuSort='amt';
+const SKU_SORT_LABEL={amt:'销售额',qty:'销量',gp:'毛利',rate:'毛利率'};
+
+function skuAgg(){
+  const rows=filterSku(srcByGran(), sSel.value);
+  const m={};
+  rows.forEach(r=>{
+    const o=m[r.sku]||(m[r.sku]={sku:r.sku,spu:r.spu||'',cat:r.cat||'其他',
+      qty:0,orders:0,amt:0,profit:0,hasProfit:false,combo:!!r.combo});
+    o.qty+=r.qty||0; o.orders+=r.orders||0; o.amt+=r.amt||0;
+    if(r.profit!=null){o.profit+=r.profit; o.hasProfit=true;}
+    if(!o.spu&&r.spu) o.spu=r.spu;
+  });
+  return Object.values(m);
+}
+
+function renderSkuSummary(){
+  const fx=(D.cost_meta&&D.cost_meta.fx)||7.62;
+  const list=skuAgg();
+  const totalAmt=list.reduce((a,b)=>a+b.amt,0)||1;
+  const totalGp=list.reduce((a,b)=>a+(b.hasProfit?b.profit:0),0);
+  list.forEach(o=>{ o.amtCny=o.amt*fx;
+    o.rate=o.hasProfit&&o.amtCny>0 ? o.profit/o.amtCny*100 : null; });
+
+  list.sort((a,b)=>{
+    if(skuSort==='qty')  return b.qty-a.qty;
+    if(skuSort==='gp')   return (b.hasProfit?b.profit:-1e18)-(a.hasProfit?a.profit:-1e18);
+    if(skuSort==='rate'){const ra=a.rate==null?-1e18:a.rate, rb=b.rate==null?-1e18:b.rate; return rb-ra;}
+    return b.amt-a.amt;
+  });
+
+  let html='';
+  list.forEach((o,i)=>{
+    const gpTxt = o.hasProfit ? fmt(o.profit) : '—';
+    const gpCol = !o.hasProfit ? '#b8bec9' : (o.profit>=0 ? '#1677ff' : '#e5484d');
+    const rTxt  = o.rate==null ? '—' : (o.rate.toFixed(1)+'%');
+    const rCol  = o.rate==null ? '#b8bec9' : (o.rate>=0 ? '#1677ff' : '#e5484d');
+    html += `<tr>
+      <td style="color:#b8bec9">${i+1}</td>
+      <td><span class="pill ${o.combo?'combo':''}">${o.sku}</span>${o.combo?'<span class="tag">组合</span>':''}</td>
+      <td style="max-width:330px;overflow:hidden;text-overflow:ellipsis">${o.spu||''}</td>
+      <td>${o.cat||''}</td>
+      <td class="num">${fmtInt(o.qty)}</td>
+      <td class="num">${fmtInt(o.orders)}</td>
+      <td class="num">${fmt(o.amtCny)}</td>
+      <td class="num" style="color:${gpCol};font-weight:600">${gpTxt}</td>
+      <td class="num" style="color:${rCol}">${rTxt}</td>
+      <td class="num">${(o.amt/totalAmt*100).toFixed(1)}%</td>
+    </tr>`;
+  });
+  document.getElementById('skuSumBody').innerHTML = html ||
+    '<tr><td colspan="10" style="text-align:center;color:#8a919f;padding:26px">当前筛选无数据</td></tr>';
+
+  document.getElementById('skuSumSub').textContent =
+    `共 ${list.length} 个 SKU · 合计 ${fmt(totalAmt*fx)} CNY · 毛利 ${fmt(totalGp)} CNY · 按${SKU_SORT_LABEL[skuSort]}降序`;
+}
+
+document.querySelectorAll('.sorter a').forEach(a=>a.onclick=()=>{
+  document.querySelectorAll('.sorter a').forEach(x=>x.classList.remove('on'));
+  a.classList.add('on'); skuSort=a.dataset.k; renderSkuSummary();
+});
+
 let dateInited=false;
-function render(){if(!dateInited){initDateRange();dateInited=true;}renderCards();renderChart();renderTable();}
+function render(){if(!dateInited){initDateRange();dateInited=true;}renderCards();renderChart();renderTable();renderSkuSummary();}
 function resetFilters(){fromDateEl.value=curY;toDateEl.value=curM;sSel.value='';pSel.value='';cSel.value='';dateInited=false;render();}
 function exportCsv(){
   const head=['日期','SKU','SPU','品类','销量(件)','订单数','销售额(EUR)','毛利(CNY)','毛利率'];
