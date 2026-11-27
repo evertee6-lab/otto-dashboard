@@ -120,6 +120,23 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
   </div>
 
   <div class="panel">
+    <h2>出单明细 <span class="sub" id="tblSub"></span></h2>
+    <div class="scroll">
+      <table><thead><tr>
+        <th id="thPeriod">日期</th><th>SKU</th><th>SPU（产品名称）</th><th>品类</th><th class="num">销量(件)</th>
+        <th class="num">订单数</th><th class="num">销售额(EUR)</th><th class="num">毛利(CNY)</th><th class="num">毛利率</th><th class="num">占比</th>
+      </tr></thead><tbody id="tbody"></tbody></table>
+    </div>
+    <div class="tip">
+      · 销量＝订单量，<b>拆单只算 1 单</b>；<b>已废弃订单也计入</b>（仅排除「付款未完成」）<br>
+      · <b>-1/-2 变体已归并</b>（OET-YDB004PIN2B-1 → OET-YDB004PIN2B）；<span class="tag">组合</span> 表示多件套，整体计 1 个产品主体，不拆分<br>
+      · <b>时间口径：德国本地时间</b>（易仓创建时间为北京时间，−7 小时换算；跨零点订单归入德国前一日）<br>
+      · <b>毛利</b>=销售额×7.62−头程−关税−尾程−采购价−退款(3%)−平台费(15%)−服务费(8.5%)，成本按「单套×订单数」计<br>
+      · 目标可直接在卡片上填写并保存本机；R/Y/G = 达成率（绿≥100% / 黄≥80% / 红&lt;80%）
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>SKU 汇总 <span class="sub" id="skuSumSub"></span>
       <span class="spacer"></span>
       <span class="sorter">排序：
@@ -137,23 +154,6 @@ tr.dayhead .dnum{float:right;font-weight:600;color:#1677ff}
       · 跟随上方时间范围与筛选条件联动；销售额按 1 EUR = 7.62 CNY 折算<br>
       · 毛利＝销售额×7.62×0.735−成本×订单数（成本来自《定价表》）；标记 <span class="tag">—</span> 表示该 SKU 尚无成本数据<br>
       · 组合 SKU 保留原名称统计；<b>OET-YDB004PIN2B+YDF002HEN0X</b> 的毛利只按 <b>YDB004PIN2B</b> 的成本计算
-    </div>
-  </div>
-
-  <div class="panel">
-    <h2>出单明细 <span class="sub" id="tblSub"></span></h2>
-    <div class="scroll">
-      <table><thead><tr>
-        <th id="thPeriod">日期</th><th>SKU</th><th>SPU（产品名称）</th><th>品类</th><th class="num">销量(件)</th>
-        <th class="num">订单数</th><th class="num">销售额(EUR)</th><th class="num">毛利(CNY)</th><th class="num">毛利率</th><th class="num">占比</th>
-      </tr></thead><tbody id="tbody"></tbody></table>
-    </div>
-    <div class="tip">
-      · 销量＝订单量，<b>拆单只算 1 单</b>；<b>已废弃订单也计入</b>（仅排除「付款未完成」）<br>
-      · <b>-1/-2 变体已归并</b>（OET-YDB004PIN2B-1 → OET-YDB004PIN2B）；<span class="tag">组合</span> 表示多件套，整体计 1 个产品主体，不拆分<br>
-      · <b>时间口径：德国本地时间</b>（易仓创建时间为北京时间，−7 小时换算；跨零点订单归入德国前一日）<br>
-      · <b>毛利</b>=销售额×7.62−头程−关税−尾程−采购价−退款(3%)−平台费(15%)−服务费(8.5%)，成本按「单套×订单数」计<br>
-      · 目标可直接在卡片上填写并保存本机；R/Y/G = 达成率（绿≥100% / 黄≥80% / 红&lt;80%）
     </div>
   </div>
 </div>
